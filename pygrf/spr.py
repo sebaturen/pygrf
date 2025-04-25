@@ -1,4 +1,5 @@
 """ spr file parsing """
+import io
 import struct
 from typing import Tuple, Sequence
 from itertools import chain
@@ -194,10 +195,11 @@ class Spr201(Spr200):
         return Image(width, height, pixels)
 
 
-class SPR:
+class SPR(io.BytesIO):
     """ a container for sprite images """
 
     def __init__(self, data: bytes):
+        super().__init__(data)
         self.header = parse_header(data, b'SP')
         self.parser = _get_parser(data, self.header)
 
