@@ -8,6 +8,7 @@ import struct
 import zlib
 from . import filetypes
 from .exceptions import GRFParseError
+from .decrypt import Decrypter
 
 
 # the grf versions that are supported
@@ -24,6 +25,7 @@ FILE_HEADER_LENGTH = 17
 
 # file flags
 FILE_IS_FILE = 1
+FILE_ENCRYPT = 3
 
 
 Header = collections.namedtuple('GRFHeader', (
@@ -240,11 +242,30 @@ class GRFFile(io.BytesIO):
         if self.header.real_size == 0:
             self.data = b''
         else:
-            self.data = zlib.decompress(stream.read(self.header.archived_size))
+            self.data = stream.read(self.header.archived_size)
+            if self.header.flag == FILE_ENCRYPT:
+                self.cycle = self.get_cycle(self.filename, self.header.compressed_size)
+                self.data = Decrypter.decrypt_file_data(bytearray(self.data), self.cycle == 0, self.cycle, 0, self.header.archived_size)
+
+            self.data = zlib.decompress(self.data)
         super().__init__(self.data)
 
     def __eq__(self, other):
         return other.filename == self.filename and other.data == self.data
+    
+    @staticmethod
+    def get_cycle(filename: str, compress_size: int):
+        cycle = 0
+        file_extension = filename.split('.')[-1]
+
+        if file_extension and file_extension not in ['gnd', 'gat', 'act', 'str']:
+            cycle = 1
+            k = 10
+            while compress_size >= k:
+                cycle += 1
+                k *= 10
+
+        return cycle
 
 
 class Index:
