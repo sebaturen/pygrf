@@ -20,6 +20,7 @@ class Layer(NamedTuple):
 class Frame(NamedTuple):
     layers: Tuple[Layer]
     trigger: int = -1
+    anchors: Tuple[Point] = ()
 
 
 class Animation(NamedTuple):
@@ -99,11 +100,16 @@ def parse_frame(stream):
         trigger, = struct.unpack('<i', stream.read(4))
     else:
         trigger = -1
-    # don't know how to use anchor data, so skip it
+
+    anchors = []
     if stream.version >= 0x203:
         count, = struct.unpack('<i', stream.read(4))
-        stream.read(16 * count)
-    return Frame(layers, trigger)
+        for _ in range(count):
+            stream.read(4)  # skip the unused int32
+            x, y = struct.unpack('<ii', stream.read(8))
+            anchors.append(Point(x, y))
+            stream.read(4)  # skip the unused int32
+    return Frame(layers, trigger, tuple(anchors))
 
 
 def parse_animation(stream):

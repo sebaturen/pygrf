@@ -25,7 +25,7 @@ FILE_HEADER_LENGTH = 17
 
 # file flags
 FILE_IS_FILE = 1
-FILE_ENCRYPT = 3
+FILE_ENCRYPT = [3, 5]
 
 
 Header = collections.namedtuple('GRFHeader', (
@@ -243,7 +243,7 @@ class GRFFile(io.BytesIO):
             self.data = b''
         else:
             self.data = stream.read(self.header.archived_size)
-            if self.header.flag == FILE_ENCRYPT:
+            if self.header.flag in FILE_ENCRYPT:
                 self.cycle = self.get_cycle(self.filename, self.header.compressed_size)
                 self.data = Decrypter.decrypt_file_data(bytearray(self.data), self.cycle == 0, self.cycle, 0, self.header.archived_size)
 
