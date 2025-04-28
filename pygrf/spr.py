@@ -98,6 +98,14 @@ class SprParser:
             return self.parse_pal(self.pal_offset(index))
         index -= pal
         return self.parse_rgb(self.rgb_offset(index))
+    
+    def set_palette(self, palette):
+        colors: Sequence[Color] = []
+        for i in range(0, len(palette), 4):
+            r, g, b, _ = palette[i:i+4]
+            a = 0 if i == 0 else 255
+            colors.append(Color(r, g, b, a))
+        self.palette = colors
 
 
 class Spr100(SprParser):
@@ -216,6 +224,9 @@ class SPR(io.BytesIO):
         if index < 0 or index >= length:
             raise IndexError
         return self.parser.get_image(index)
+    
+    def set_palette(self, palette):
+        self.parser.set_palette(palette)
 
     @property
     def version(self) -> int:
